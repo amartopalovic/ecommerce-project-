@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import axios from "axios";
 import { formatMoney } from "../../src/utils/money";
 import { DeliveryOptions } from "./DeliveryOptions";
 
@@ -10,6 +11,11 @@ export function OrderSummary({ cart, deliveryOptions, loadCart }) {
           const selectedDeliveryOption = deliveryOptions.find(
             (deliveryOption) => deliveryOption.id === cartItem.deliveryOptionId,
           );
+
+          const deleteCartItem = async () => {
+            await axios.delete(`/api/cart-items/${cartItem.productId}`);
+            await loadCart();
+          };
 
           return (
             <div key={cartItem.productId} className="cart-item-container">
@@ -35,10 +41,44 @@ export function OrderSummary({ cart, deliveryOptions, loadCart }) {
                         {cartItem.quantity}
                       </span>
                     </span>
-                    <span className="update-quantity-link link-primary">
+                    <span
+                      className="update-quantity-link link-primary"
+                      onClick={async () => {
+                        const value = window.prompt(
+                          "Update quantity",
+                          String(cartItem.quantity),
+                        );
+                        if (value === null) return;
+
+                        const parsed = Number(value);
+                        if (
+                          Number.isNaN(parsed) ||
+                          parsed < 1 ||
+                          !Number.isInteger(parsed)
+                        ) {
+                          window.alert(
+                            "Quantity must be an integer of 1 or more.",
+                          );
+                          return;
+                        }
+
+                        if (parsed === cartItem.quantity) return;
+
+                        await axios.put(
+                          `/api/cart-items/${cartItem.productId}`,
+                          {
+                            quantity: parsed,
+                          },
+                        );
+                        await loadCart();
+                      }}
+                    >
                       Update
                     </span>
-                    <span className="delete-quantity-link link-primary">
+                    <span
+                      className="delete-quantity-link link-primary"
+                      onClick={deleteCartItem}
+                    >
                       Delete
                     </span>
                   </div>
